@@ -1,39 +1,12 @@
+terraform {
+  required_version = ">=0.12.13"
+}
+
 resource "aws_ecr_repository" "repo" {
-  name = "${var.image_name}"
+  name = var.image_name
 }
 
 resource "aws_ecr_lifecycle_policy" "repo-policy" {
-  repository = "${aws_ecr_repository.repo.name}"
-
-  policy = <<EOF
-{
-  "rules": [
-    {
-      "rulePriority": 1,
-      "description": "Keep image deployed with tag '${var.tag}''",
-      "selection": {
-        "tagStatus": "tagged",
-        "tagPrefixList": ["${var.tag}"],
-        "countType": "imageCountMoreThan",
-        "countNumber": 1
-      },
-      "action": {
-        "type": "expire"
-      }
-    },
-    {
-      "rulePriority": 2,
-      "description": "Keep last 2 any images",
-      "selection": {
-        "tagStatus": "any",
-        "countType": "imageCountMoreThan",
-        "countNumber": 2
-      },
-      "action": {
-        "type": "expire"
-      }
-    }
-  ]
-}
-EOF
+  repository = aws_ecr_repository.repo.name
+  policy = data.template_file.ecr_lifecycle_policy.rendered
 }
